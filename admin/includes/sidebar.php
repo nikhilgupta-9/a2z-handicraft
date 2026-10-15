@@ -22,7 +22,7 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= ($currentPage === 'categories.php') ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/categories.php">
+            <a class="nav-link <?= in_array($currentPage, ['categories.php', 'category-add.php', 'category-edit.php']) ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/categories.php">
                 <span><i class="fa-solid fa-layer-group"></i> Categories</span>
             </a>
         </li>

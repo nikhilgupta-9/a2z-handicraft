@@ -95,7 +95,7 @@ $recentReviews = $pdo->query("SELECT r.*, p.name as product_name FROM reviews r 
             <a href="<?= ADMIN_URL ?>/product-add.php" class="btn btn-sm btn-primary-a2z">
                 <i class="fa-solid fa-plus me-1"></i> Add Product
             </a>
-            <a href="<?= ADMIN_URL ?>/categories.php" class="btn btn-sm btn-outline-secondary">
+            <a href="<?= ADMIN_URL ?>/category-add.php" class="btn btn-sm btn-outline-secondary">
                 <i class="fa-solid fa-folder-plus me-1"></i> Add Category
             </a>
             <a href="<?= ADMIN_URL ?>/banners.php" class="btn btn-sm btn-outline-secondary">
