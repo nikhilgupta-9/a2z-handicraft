@@ -27,7 +27,7 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= ($currentPage === 'subcategories.php') ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/subcategories.php">
+            <a class="nav-link <?= in_array($currentPage, ['subcategories.php', 'subcategory-add.php', 'subcategory-edit.php']) ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/subcategories.php">
                 <span><i class="fa-solid fa-tags"></i> Subcategories</span>
             </a>
         </li>
