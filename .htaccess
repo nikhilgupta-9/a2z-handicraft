@@ -1,0 +1,43 @@
+# A2Z Handicraft Apache Configuration & Clean SEO URLs
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /a2z-handicraft/
+
+    # Security: Protect sensitive files and directories
+    <FilesMatch "^\.env|\.git|composer\.(json|lock)|.*\.sql$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+
+    # Disable Directory Browsing
+    Options -Indexes
+
+    # Allow direct access to real files and directories
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Clean SEO URL Rewrite Rules
+    # 1. Product Detail Page: /product/slug-name
+    RewriteRule ^product/([^/]+)/?$ product-details.php?slug=$1 [L,QSA]
+
+    # 2. Category Products Listing: /category/slug-name
+    RewriteRule ^category/([^/]+)/?$ products.php?category=$1 [L,QSA]
+
+    # 3. Subcategory Products Listing: /subcategory/slug-name
+    RewriteRule ^subcategory/([^/]+)/?$ products.php?subcategory=$1 [L,QSA]
+
+    # 4. Clean main page URLs
+    RewriteRule ^categories/?$ categories.php [L,QSA]
+    RewriteRule ^products/?$ products.php [L,QSA]
+    RewriteRule ^about-us/?$ about-us.php [L,QSA]
+    RewriteRule ^contact-us/?$ contact-us.php [L,QSA]
+</IfModule>
+
+# Basic Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
