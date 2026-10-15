@@ -5,8 +5,8 @@
     Require all denied
 </FilesMatch>
 
-# Disable Directory Browsing
-Options -Indexes
+# Disable Directory Browsing & MultiViews (preventing content negotiation conflicts)
+Options -Indexes -MultiViews
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -27,6 +27,8 @@ Options -Indexes
     # Clean SEO URL Rewrite Rules
     # 1. Product Detail Page: /product/slug-name
     RewriteRule ^product/([^/]+)/?$ product-details.php?slug=$1 [L,QSA]
+    RewriteRule ^product-details/([^/]+)/?$ product-details.php?slug=$1 [L,QSA]
+    RewriteRule ^product/?$ products.php [L,QSA]
 
     # 2. Category Products Listing: /category/slug-name
     RewriteRule ^category/([^/]+)/?$ products.php?category=$1 [L,QSA]

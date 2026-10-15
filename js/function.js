@@ -72,32 +72,33 @@
 	}
 
 	/* Product Single Image Slider JS */
-	// THUMBNAILS (LEFT)
-	var swiperThumbs = new Swiper(".product-single-image-slider", {
-		spaceBetween: 10,
-		slidesPerView: 3,
-		loop: true,
-		speed: 1000,
-		watchSlidesProgress: true,
-		slideToClickedSlide: true,
-		allowTouchMove: true,
-		breakpoints:{
-			767:{
-				spaceBetween: 0,
+	if ($('.product-single-image-slider').length && $('.product-single-image-item').length) {
+		var slideCount = $('.product-single-image-slider .swiper-slide').length;
+		var swiperThumbs = new Swiper(".product-single-image-slider", {
+			spaceBetween: 10,
+			slidesPerView: slideCount >= 3 ? 3 : (slideCount > 0 ? slideCount : 1),
+			loop: slideCount > 3,
+			speed: 1000,
+			watchSlidesProgress: true,
+			slideToClickedSlide: true,
+			allowTouchMove: true,
+			breakpoints:{
+				767:{
+					spaceBetween: 10,
+				}
 			}
-		}
-	});
+		});
 
-	// MAIN IMAGE (RIGHT)
-	var swiperMain = new Swiper(".product-single-image-item", {
-		spaceBetween: 0,
-		slidesPerView: 1,
-		loop: true,
-		speed: 1000,
-		thumbs: {
-			swiper: swiperThumbs,
-		},
-	});
+		var swiperMain = new Swiper(".product-single-image-item", {
+			spaceBetween: 0,
+			slidesPerView: 1,
+			loop: slideCount > 1,
+			speed: 1000,
+			thumbs: {
+				swiper: swiperThumbs,
+			},
+		});
+	}
 
 	
 	/* Testimonial Slider JS */

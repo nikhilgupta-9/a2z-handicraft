@@ -33,13 +33,21 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Determine Base URL dynamically or from .env
-$envAppUrl = $_ENV['APP_URL'] ?? '';
-if (!empty($envAppUrl)) {
-    $baseUrl = rtrim($envAppUrl, '/');
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+$currentHost = $_SERVER['HTTP_HOST'] ?? '';
+
+if (!empty($_ENV['APP_URL']) && (empty($currentHost) || strpos($_ENV['APP_URL'], $currentHost) !== false)) {
+    $baseUrl = rtrim($_ENV['APP_URL'], '/');
+} elseif (!empty($currentHost)) {
+    $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+    $baseFolder = ($scriptDir === '/' || $scriptDir === '\\') ? '' : str_replace('\\', '/', $scriptDir);
+    $baseFolder = preg_replace('#/(admin|ajax)(/.*)?$#', '', $baseFolder);
+    if (empty($baseFolder)) {
+        $baseFolder = '/a2z-handicraft';
+    }
+    $baseUrl = $protocol . $currentHost . rtrim($baseFolder, '/');
 } else {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $baseUrl = $protocol . $host . '/a2z-handicraft';
+    $baseUrl = 'http://localhost/a2z-handicraft';
 }
 
 if (!defined('BASE_URL')) {

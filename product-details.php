@@ -3,11 +3,42 @@ require_once __DIR__ . '/config/config.php';
 
 $slug = request_string($_GET, 'slug');
 $id = (int)($_GET['id'] ?? 0);
+if (empty($slug) && isset($_GET['product'])) {
+    $slug = trim((string)$_GET['product']);
+}
+
+// Fallback parsing from PATH_INFO or REQUEST_URI if rewrite passes path
+if (empty($slug) && empty($id)) {
+    if (!empty($_SERVER['PATH_INFO'])) {
+        $slug = trim($_SERVER['PATH_INFO'], '/');
+    } else {
+        $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        if (preg_match('#/(?:product|product-details)/([^/?#]+)#i', $uriPath, $m)) {
+            $slug = urldecode($m[1]);
+        }
+    }
+}
+
+// Fallback: If no slug and no id provided at all, redirect to first active product's clean SEO URL
+if (empty($slug) && $id <= 0) {
+    global $pdo;
+    $firstProd = $pdo->query("SELECT slug FROM products WHERE status = 1 ORDER BY id ASC LIMIT 1")->fetch();
+    if ($firstProd && !empty($firstProd['slug'])) {
+        header('Location: ' . BASE_URL . '/product/' . $firstProd['slug'], true, 302);
+        exit;
+    }
+}
+
+$isAdmin = is_admin_logged_in();
 
 if (!empty($slug)) {
-    $product = get_product_by_slug($slug);
+    $product = get_product_by_slug($slug, $isAdmin);
+    // If not found by slug, maybe slug was an ID?
+    if (!$product && ctype_digit($slug)) {
+        $product = get_product_by_id((int)$slug, $isAdmin);
+    }
 } elseif ($id > 0) {
-    $product = get_product_by_id($id);
+    $product = get_product_by_id($id, $isAdmin);
 } else {
     $product = null;
 }
@@ -25,8 +56,14 @@ $pdo->query("UPDATE products SET views = views + 1 WHERE id = " . (int)$product[
 
 // Gallery images array
 $gallery = !empty($product['gallery_images']) ? (json_decode($product['gallery_images'], true) ?: []) : [];
-if (!in_array($product['featured_image'], $gallery)) {
+if (!empty($product['featured_image']) && !in_array($product['featured_image'], $gallery)) {
     array_unshift($gallery, $product['featured_image']);
+}
+if (empty($gallery) && !empty($product['featured_image'])) {
+    $gallery = [$product['featured_image']];
+}
+if (empty($gallery)) {
+    $gallery = ['assets/images/placeholder.jpg'];
 }
 
 // WhatsApp order button setup
@@ -116,7 +153,7 @@ $seoMeta = [
                         <div class="product-single-info-box">
                             <!-- Product Single Image Box Start -->
                             <div class="product-single-image-box wow fadeInUp">
-                                <!-- Main Large Swiper -->
+                                <!-- Thumbnails Slider (Left column, 145px) -->
                                 <div class="swiper product-single-image-slider">
                                     <div class="swiper-wrapper">
                                         <?php foreach ($gallery as $img): ?>
@@ -129,13 +166,13 @@ $seoMeta = [
                                     </div>
                                 </div>
                                 
-                                <!-- Thumbnails Swiper -->
-                                <div class="swiper product-single-image-item mt-3">
+                                <!-- Main Large Image Slider (Right column) -->
+                                <div class="swiper product-single-image-item">
                                     <div class="swiper-wrapper">
                                         <?php foreach ($gallery as $img): ?>
                                             <div class="swiper-slide">
-                                                <figure class="imgae-anime">
-                                                    <img src="<?= e(resolve_image_url($img)) ?>" alt="<?= e($product['name']) ?>" style="cursor: pointer; object-fit: cover;">
+                                                <figure class="image-anime">
+                                                    <img src="<?= e(resolve_image_url($img)) ?>" alt="<?= e($product['name']) ?>" style="cursor: zoom-in; object-fit: cover;">
                                                 </figure>
                                             </div>
                                         <?php endforeach; ?>

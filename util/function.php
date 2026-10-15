@@ -630,22 +630,37 @@ function get_products_count($filters = []) {
     return (int)$stmt->fetchColumn();
 }
 
-function get_product_by_slug($slug) {
+function get_product_by_slug($slug, $allowDraft = false) {
     global $pdo;
-    $stmt = $pdo->prepare("SELECT p.*, c.name as category_name, c.slug as category_slug, 
-                           s.name as subcategory_name, s.slug as subcategory_slug 
-                           FROM products p 
-                           LEFT JOIN categories c ON p.category_id = c.id 
-                           LEFT JOIN subcategories s ON p.subcategory_id = s.id 
-                           WHERE p.slug = ? AND p.status = 1 LIMIT 1");
+    $sql = "SELECT p.*, c.name as category_name, c.slug as category_slug, 
+                   s.name as subcategory_name, s.slug as subcategory_slug 
+            FROM products p 
+            LEFT JOIN categories c ON p.category_id = c.id 
+            LEFT JOIN subcategories s ON p.subcategory_id = s.id 
+            WHERE p.slug = ?";
+    if (!$allowDraft) {
+        $sql .= " AND p.status = 1";
+    }
+    $sql .= " LIMIT 1";
+    $stmt = $pdo->prepare($sql);
     $stmt->execute([$slug]);
     return $stmt->fetch();
 }
 
-function get_product_by_id($id) {
+function get_product_by_id($id, $allowDraft = false) {
     global $pdo;
-    $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ? LIMIT 1");
-    $stmt->execute([$id]);
+    $sql = "SELECT p.*, c.name as category_name, c.slug as category_slug, 
+                   s.name as subcategory_name, s.slug as subcategory_slug 
+            FROM products p 
+            LEFT JOIN categories c ON p.category_id = c.id 
+            LEFT JOIN subcategories s ON p.subcategory_id = s.id 
+            WHERE p.id = ?";
+    if (!$allowDraft) {
+        $sql .= " AND p.status = 1";
+    }
+    $sql .= " LIMIT 1";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([(int)$id]);
     return $stmt->fetch();
 }
 

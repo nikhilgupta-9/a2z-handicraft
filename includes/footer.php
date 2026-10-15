@@ -7,7 +7,6 @@ $footerPhone = get_setting('phone', '+91-7983894672');
 $footerWhatsapp = get_setting('whatsapp', '917983894672');
 $footerEmail = get_setting('email', 'a2zhandicraft@gmail.com');
 $footerAddress = get_setting('address', 'Main Hapur Road, Arifpur Saravni, Distt. Hapur, UP - 245101');
-$footerTimings = get_setting('workshop_timings', 'Mon - Sat: 9:00 AM - 8:00 PM (Sunday Closed)');
 $footerCopyright = get_setting('copyright_text', 'Copyright © {year} A2Z HANDICRAFT. All Rights Reserved!');
 $footerCopyright = str_replace('{year}', date('Y'), $footerCopyright);
 
@@ -148,18 +147,6 @@ $cleanWhatsapp = preg_replace('/[^0-9]/', '', $footerWhatsapp);
                                     <p><a href="mailto:<?= e($footerEmail) ?>"><?= e($footerEmail) ?></a></p>
                                 </div>
                             </div>
-
-                            <?php if (!empty($footerTimings)): ?>
-                                <div class="footer-contact-item">
-                                    <div class="icon-box">
-                                        <i class="fa-regular fa-clock"></i>
-                                    </div>
-                                    <div class="footer-contact-item-content">
-                                        <h3>Working Hours</h3>
-                                        <p class="small text-white-50"><?= e($footerTimings) ?></p>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
