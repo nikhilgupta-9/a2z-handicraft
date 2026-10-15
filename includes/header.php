@@ -8,42 +8,39 @@ $topbarWhatsappText = get_setting('topbar_whatsapp_text', 'Bulk Order Now: ' . $
 $fbUrl = get_setting('facebook_url', '#');
 $instaUrl = get_setting('instagram_url', '#');
 $ytUrl = get_setting('youtube_url', '#');
-
-// Fetch categories and subcategories for menu
-$navCategories = get_categories(12);
 ?>
     <!-- Topbar Section Start -->
     <div class="topbar">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-md-2 col-4">
+                <div class="col-md-2 ">
                     <!-- Topbar Social List Start -->
                     <div class="topbar-social-list">
                         <ul>
-                            <?php if (!empty($fbUrl)): ?><li><a href="<?= e($fbUrl) ?>" target="_blank"><i class="fa-brands fa-facebook-f"></i></a></li><?php endif; ?>
-                            <?php if (!empty($instaUrl)): ?><li><a href="<?= e($instaUrl) ?>" target="_blank"><i class="fa-brands fa-instagram"></i></a></li><?php endif; ?>
-                            <?php if (!empty($ytUrl)): ?><li><a href="<?= e($ytUrl) ?>" target="_blank"><i class="fa-brands fa-youtube"></i></a></li><?php endif; ?>
+                            <li><a href="<?= e($fbUrl) ?>"><i class="fa-brands fa-facebook-f"></i></a></li>
+                            <li><a href="<?= e($instaUrl) ?>"><i class="fa-brands fa-instagram"></i></a></li>
+                            <li><a href="<?= e($ytUrl) ?>"><i class="fa-brands fa-youtube"></i></a></li>
                         </ul>
                     </div>
                     <!-- Topbar Social List End -->
                 </div>
 
-                <div class="col-md-7 d-none d-md-block">
+                <div class="col-md-7">
                     <!-- Topbar Info Content Start -->
                     <div class="topbar-info-content">
                         <p><?= e($topbarInfo) ?></p>
                     </div>
                     <!-- Topbar Info Content End -->
                 </div>
-                <div class="col-md-3 col-8 text-end">
-                  <div class="topbar-currency-list">
+                <div class="col-md-3">
+                  <div class="topbar-currency-list ">
                       <div class="top-right text-right">
-                       <a href="https://api.whatsapp.com/send?phone=<?= preg_replace('/[^0-9]/', '', $whatsappNo) ?>&text=Hello%20A2Z%20Handicraft,%20I%20am%20interested%20in%20bulk%20order" target="_blank">
-                           <i class="fa-brands fa-whatsapp text-success"></i> <?= e($topbarWhatsappText) ?>
-                       </a>
+                       <a href="https://api.whatsapp.com/send?phone=<?= preg_replace('/[^0-9]/', '', $whatsappNo) ?>&text=Hello%20A2Z%20Handicraft,%20I%20am%20interested%20in%20bulk%20order" target="_blank"> <i class="fa-brands fa-whatsapp"></i> <?= e($topbarWhatsappText) ?></a>
                       </div>
                     </div>
                 </div>
+               
+                <!-- Topbar Content Box End -->
             </div>
         </div>
     </div>
@@ -56,7 +53,7 @@ $navCategories = get_categories(12);
                 <div class="container">
                     <!-- Logo Start -->
                     <a class="navbar-brand" href="<?= BASE_URL ?>/index.php">
-                        <img src="<?= e($headerLogo) ?>" alt="<?= e(get_setting('site_name', 'A2Z Handicraft')) ?>" style="max-height: 65px;">
+                        <img src="<?= e($headerLogo) ?>" alt="Logo">
                     </a>
                     <!-- Logo End -->
 
@@ -68,30 +65,45 @@ $navCategories = get_categories(12);
                                 <ul class="navbar-nav" id="menu">
                                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/index.php">Home</a></li>                                
                                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/about-us.php">About Us</a></li>
-                                    
-                                    <li class="nav-item submenu"><a class="nav-link" href="<?= BASE_URL ?>/categories.php">Categories</a>
+                                    <li class="nav-item submenu"><a class="nav-link" href="<?= BASE_URL ?>/categories.php">Event Decoration</a>
                                         <ul>
-                                            <?php foreach ($navCategories as $cat): ?>
-                                                <li><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=<?= urlencode($cat['slug']) ?>"><?= e($cat['name']) ?></a></li>
-                                            <?php endforeach; ?>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=rdi-hanging">RDI Hanging</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=iron-frame">Iron Frame</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=artificial-flower-patta">Artificial Flower Patta</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=dream-catcher">Dream Catcher</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=flower-bunch">Flower Bunch</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=net-line-hanging">Net Line Hanging</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=ring-hanging">Ring Hanging</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?subcategory=artificial-ring-hanging">Artificial Ring Hanging</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?subcategory=kite-hanging">Kite Hanging</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?subcategory=net-chakra-hanging">Net Chakra Hanging</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?subcategory=genda-lines">Genda Lines</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?subcategory=tokri-jumer">Tokri Jumer</a></li>
                                         </ul>
                                     </li>
-
-                                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php">All Products</a></li>
+                                    <li class="nav-item submenu"><a class="nav-link" href="<?= BASE_URL ?>/categories.php">Gift Items</a>
+                                        <ul>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=potli-bags">Potli bags</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=puppets-items">Puppets Items</a></li>
+                                            <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=fancy-toran">Fancy Toran</a></li>
+                                        </ul>
+                                    </li>
+                                    
+                                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products.php?category=iron-frame">Wooden & Irons</a></li>
                                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/contact-us.php">Contact Us</a></li>
                                 </ul>
                             </div>
                         </div>                
                         <div class="navbar-toggle"></div>
                         <!-- Navbar Collapse End -->
-
+    
                         <!-- Header Action Details Start -->
                         <div class="header-action-details">
                             <ul>
                                 <li>
                                     <!-- Header Search Form Start -->
-                                    <button type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-label="Search">
-                                        <img src="<?= BASE_URL ?>/images/icon-search-primary.svg" alt="Search">
+                                    <button type="button" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                        <img src="<?= BASE_URL ?>/images/icon-search-primary.svg" alt="">
                                     </button>
                                     <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                         <div class="modal-dialog modal-dialog-centered">
@@ -100,7 +112,7 @@ $navCategories = get_categories(12);
                                                     <i class="fa-solid fa-xmark"></i>
                                                 </button>
                                                 <form action="<?= BASE_URL ?>/products.php" method="GET" class="modal-search-form">
-                                                    <input type="text" name="search" class="form-control" id="search" placeholder="Search Your Product (e.g. Kite Hanging, Toran...)" required>
+                                                    <input type="text" name="search" class="form-control" id="search" placeholder="Search Your Product">
                                                     <button type="submit" class="modal-search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
                                                 </form>
                                             </div>
@@ -108,8 +120,8 @@ $navCategories = get_categories(12);
                                     </div>
                                     <!-- Header Search Form End -->
                                 </li>
-                                <li><a href="<?= ADMIN_URL ?>/index.php" title="Admin Panel"><img src="<?= BASE_URL ?>/images/icon-user-primary.svg" alt="Admin"></a></li>
-                                <li><a href="https://api.whatsapp.com/send?phone=<?= preg_replace('/[^0-9]/', '', $whatsappNo) ?>&text=Hello%20A2Z%20Handicraft" target="_blank" title="WhatsApp Inquiries"><i class="fa-brands fa-whatsapp fs-4 text-success"></i></a></li>
+                                <li><a href="<?= ADMIN_URL ?>/index.php" title="Admin Panel"><img src="<?= BASE_URL ?>/images/icon-user-primary.svg" alt=""></a></li>
+                                <li><a href="<?= BASE_URL ?>/products.php"><img src="<?= BASE_URL ?>/images/icon-cart-primary.svg" alt=""></a></li>
                             </ul>
                         </div>
                         <!-- Header Action Details End -->                    
