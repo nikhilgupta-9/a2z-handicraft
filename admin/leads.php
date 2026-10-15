@@ -97,7 +97,10 @@ $leads = $stmt->fetchAll();
                     <?php endif; ?>
                 </form>
             </div>
-            <div class="col-md-5 text-md-end">
+            <div class="col-md-5 text-md-end d-flex justify-content-md-end gap-2">
+                <a href="<?= ADMIN_URL ?>/lead-add.php" class="btn btn-primary-a2z btn-sm shadow-sm">
+                    <i class="fa-solid fa-plus-circle me-1"></i> Add Inquiry / Lead
+                </a>
                 <a href="<?= ADMIN_URL ?>/leads.php?export=csv" class="btn btn-outline-success btn-sm">
                     <i class="fa-solid fa-file-csv me-1"></i> Export to CSV
                 </a>

@@ -3,7 +3,6 @@ $pageTitle = 'Product Reviews Moderation';
 require_once __DIR__ . '/includes/header.php';
 
 global $pdo;
-$error = '';
 
 // Handle Delete
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
@@ -36,183 +35,182 @@ if (isset($_GET['action']) && $_GET['action'] === 'status' && isset($_GET['id'])
     exit;
 }
 
-// Handle Add / Edit Review POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
-        $error = 'Security session expired. Please refresh and try again.';
-    } else {
-        $authorName = trim($_POST['author_name'] ?? '');
-        $authorEmail = trim($_POST['author_email'] ?? '');
-        $productId = !empty($_POST['product_id']) ? (int)$_POST['product_id'] : null;
-        $rating = (int)($_POST['rating'] ?? 5);
-        $title = trim($_POST['title'] ?? '');
-        $comment = trim($_POST['comment'] ?? '');
-        $status = $_POST['status'] ?? 'approved';
+// Filters
+$statusFilter = $_GET['status'] ?? '';
+$search = trim($_GET['search'] ?? '');
 
-        if (empty($authorName) || empty($comment)) {
-            $error = 'Reviewer name and comment are required.';
-        } else {
-            $stmt = $pdo->prepare("INSERT INTO reviews (product_id, author_name, author_email, rating, title, comment, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$productId, $authorName, $authorEmail, $rating, $title, $comment, $status]);
-            log_activity('REVIEW_CREATE', "Added review from $authorName");
-            set_flash('success', 'Review recorded successfully.');
-            header('Location: ' . ADMIN_URL . '/reviews.php');
-            exit;
-        }
-    }
+$sql = "SELECT r.*, p.name as product_name 
+        FROM reviews r 
+        LEFT JOIN products p ON r.product_id = p.id 
+        WHERE 1=1";
+$params = [];
+
+if (!empty($statusFilter)) {
+    $sql .= " AND r.status = ?";
+    $params[] = $statusFilter;
 }
 
-// Fetch Reviews with product name
-$reviews = $pdo->query("SELECT r.*, p.name as product_name FROM reviews r LEFT JOIN products p ON r.product_id = p.id ORDER BY r.id DESC")->fetchAll();
-$products = $pdo->query("SELECT id, name FROM products ORDER BY name ASC")->fetchAll();
+if (!empty($search)) {
+    $sql .= " AND (r.author_name LIKE ? OR r.author_email LIKE ? OR r.comment LIKE ? OR r.title LIKE ? OR p.name LIKE ?)";
+    $term = "%$search%";
+    $params[] = $term;
+    $params[] = $term;
+    $params[] = $term;
+    $params[] = $term;
+    $params[] = $term;
+}
+
+$sql .= " ORDER BY r.id DESC";
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
+$reviews = $stmt->fetchAll();
+
+// Counts for filter pills
+$totalReviews = (int)$pdo->query("SELECT COUNT(*) FROM reviews")->fetchColumn();
+$approvedCount = (int)$pdo->query("SELECT COUNT(*) FROM reviews WHERE status = 'approved'")->fetchColumn();
+$pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM reviews WHERE status = 'pending'")->fetchColumn();
+$rejectedCount = (int)$pdo->query("SELECT COUNT(*) FROM reviews WHERE status = 'rejected'")->fetchColumn();
 ?>
 
-<?php if (!empty($error)): ?>
-    <div class="alert alert-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i><?= e($error) ?></div>
-<?php endif; ?>
-
-<div class="row">
-    <!-- Form Column -->
-    <div class="col-lg-4 mb-4">
-        <div class="card">
-            <div class="card-header bg-white">
-                <span class="fw-bold"><i class="fa-solid fa-plus-circle text-primary me-2"></i>Add Customer Review</span>
-            </div>
-            <div class="card-body">
-                <form action="" method="POST">
-                    <?= csrf_field() ?>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Product (Optional)</label>
-                        <select name="product_id" class="form-select">
-                            <option value="">-- General Website Review --</option>
-                            <?php foreach ($products as $p): ?>
-                                <option value="<?= $p['id'] ?>"><?= e($p['name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Reviewer Full Name*</label>
-                        <input type="text" name="author_name" class="form-control" required placeholder="e.g. Aman Verma">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Reviewer Email (Optional)</label>
-                        <input type="email" name="author_email" class="form-control" placeholder="reviewer@example.com">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Rating</label>
-                        <select name="rating" class="form-select">
-                            <option value="5">⭐⭐⭐⭐⭐ (5 Stars)</option>
-                            <option value="4">⭐⭐⭐⭐ (4 Stars)</option>
-                            <option value="3">⭐⭐⭐ (3 Stars)</option>
-                            <option value="2">⭐⭐ (2 Stars)</option>
-                            <option value="1">⭐ (1 Star)</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Review Headline / Title</label>
-                        <input type="text" name="title" class="form-control" placeholder="e.g. Outstanding Quality">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Review Comment*</label>
-                        <textarea name="comment" class="form-control" rows="3" required placeholder="Customer review remarks..."></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Moderation Status</label>
-                        <select name="status" class="form-select">
-                            <option value="approved">Approved & Published</option>
-                            <option value="pending">Pending Moderation</option>
-                            <option value="rejected">Rejected</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary-a2z w-100 py-2">
-                        <i class="fa-solid fa-floppy-disk me-1"></i> Save Review
-                    </button>
+<!-- Header & Action Bar -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body py-3">
+        <div class="row align-items-center g-3">
+            <div class="col-md-7">
+                <form action="" method="GET" class="d-flex flex-wrap gap-2">
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search reviewer, product, or comment..." value="<?= e($search) ?>" style="max-width: 260px;">
+                    <select name="status" class="form-select form-select-sm" style="max-width: 160px;">
+                        <option value="">All Statuses</option>
+                        <option value="approved" <?= ($statusFilter === 'approved') ? 'selected' : '' ?>>Approved</option>
+                        <option value="pending" <?= ($statusFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
+                        <option value="rejected" <?= ($statusFilter === 'rejected') ? 'selected' : '' ?>>Rejected</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary-a2z"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    <?php if (!empty($search) || !empty($statusFilter)): ?>
+                        <a href="<?= ADMIN_URL ?>/reviews.php" class="btn btn-sm btn-light">Reset</a>
+                    <?php endif; ?>
                 </form>
+            </div>
+            <div class="col-md-5 text-md-end">
+                <a href="<?= ADMIN_URL ?>/review-add.php" class="btn btn-primary-a2z btn-sm shadow-sm">
+                    <i class="fa-solid fa-plus-circle me-1"></i> Add Customer Review
+                </a>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Table Column -->
-    <div class="col-lg-8 mb-4">
-        <div class="card">
-            <div class="card-header bg-white">
-                <span class="fw-bold"><i class="fa-solid fa-star-half-stroke text-primary me-2"></i>Customer Reviews (<?= count($reviews) ?>)</span>
-            </div>
-            <div class="card-body p-0 table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
+<!-- Status Tabs -->
+<div class="d-flex gap-2 mb-3">
+    <a href="<?= ADMIN_URL ?>/reviews.php" class="btn btn-sm <?= empty($statusFilter) ? 'btn-dark' : 'btn-outline-secondary' ?>">
+        All (<?= $totalReviews ?>)
+    </a>
+    <a href="<?= ADMIN_URL ?>/reviews.php?status=approved" class="btn btn-sm <?= ($statusFilter === 'approved') ? 'btn-success' : 'btn-outline-success' ?>">
+        Approved (<?= $approvedCount ?>)
+    </a>
+    <a href="<?= ADMIN_URL ?>/reviews.php?status=pending" class="btn btn-sm <?= ($statusFilter === 'pending') ? 'btn-warning text-dark' : 'btn-outline-warning text-dark' ?>">
+        Pending (<?= $pendingCount ?>)
+    </a>
+    <a href="<?= ADMIN_URL ?>/reviews.php?status=rejected" class="btn btn-sm <?= ($statusFilter === 'rejected') ? 'btn-danger' : 'btn-outline-danger' ?>">
+        Rejected (<?= $rejectedCount ?>)
+    </a>
+</div>
+
+<!-- Reviews Table -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between">
+        <span class="fw-bold"><i class="fa-solid fa-star-half-stroke text-primary me-2"></i>Product & Customer Reviews (<?= count($reviews) ?>)</span>
+        <span class="text-muted small">Moderate before showing publicly on product pages</span>
+    </div>
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Reviewer</th>
+                    <th>Product</th>
+                    <th>Rating</th>
+                    <th>Review Title & Comment</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th style="width: 150px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($reviews)): ?>
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-star-half-stroke fs-2 mb-2 d-block"></i>
+                            No reviews found matching your filter criteria.
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($reviews as $r): ?>
                         <tr>
-                            <th>Reviewer</th>
-                            <th>Target Item</th>
-                            <th>Rating & Feedback</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($reviews)): ?>
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">No reviews recorded yet.</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($reviews as $rev): ?>
-                                <tr>
-                                    <td>
-                                        <div class="fw-bold"><?= e($rev['author_name']) ?></div>
-                                        <small class="text-muted"><?= e($rev['author_email'] ?? 'No email') ?></small>
-                                    </td>
-                                    <td>
-                                        <small class="badge bg-light text-dark border"><?= e($rev['product_name'] ?? 'General Review') ?></small>
-                                    </td>
-                                    <td>
-                                        <div class="text-warning small mb-1">
-                                            <?= str_repeat('★', $rev['rating']) ?>
-                                        </div>
-                                        <?php if (!empty($rev['title'])): ?>
-                                            <div class="fw-semibold small"><?= e($rev['title']) ?></div>
-                                        <?php endif; ?>
-                                        <div class="small text-muted text-truncate" style="max-width: 250px;">
-                                            <?= e($rev['comment']) ?>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-0 px-2" type="button" data-bs-toggle="dropdown">
-                                                <?php if ($rev['status'] === 'approved'): ?>
-                                                    <span class="text-success fw-bold">Approved</span>
-                                                <?php elseif ($rev['status'] === 'rejected'): ?>
-                                                    <span class="text-danger fw-bold">Rejected</span>
-                                                <?php else: ?>
-                                                    <span class="text-warning text-dark fw-bold">Pending</span>
-                                                <?php endif; ?>
-                                            </button>
-                                            <ul class="dropdown-menu shadow">
-                                                <li><a class="dropdown-item text-success" href="<?= ADMIN_URL ?>/reviews.php?action=status&val=approved&id=<?= $rev['id'] ?>&token=<?= csrf_token() ?>">Approve</a></li>
-                                                <li><a class="dropdown-item text-warning" href="<?= ADMIN_URL ?>/reviews.php?action=status&val=pending&id=<?= $rev['id'] ?>&token=<?= csrf_token() ?>">Pending</a></li>
-                                                <li><a class="dropdown-item text-danger" href="<?= ADMIN_URL ?>/reviews.php?action=status&val=rejected&id=<?= $rev['id'] ?>&token=<?= csrf_token() ?>">Reject</a></li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <a href="<?= ADMIN_URL ?>/reviews.php?action=delete&id=<?= $rev['id'] ?>&token=<?= csrf_token() ?>" class="btn btn-sm btn-light" onclick="return confirmDelete('Delete this review?');" title="Delete">
-                                            <i class="fa-solid fa-trash text-danger"></i>
+                            <td>
+                                <div class="fw-bold text-dark"><?= e($r['author_name']) ?></div>
+                                <small class="text-muted"><?= e($r['author_email'] ?? 'No email') ?></small>
+                            </td>
+                            <td>
+                                <?php if (!empty($r['product_name'])): ?>
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="fa-solid fa-box text-primary me-1"></i><?= e($r['product_name']) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border">General Review</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="text-warning small text-nowrap">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <i class="fa-<?= ($i <= $r['rating']) ? 'solid' : 'regular' ?> fa-star"></i>
+                                    <?php endfor; ?>
+                                </div>
+                            </td>
+                            <td>
+                                <?php if (!empty($r['title'])): ?>
+                                    <div class="fw-semibold text-dark small"><?= e($r['title']) ?></div>
+                                <?php endif; ?>
+                                <small class="text-muted d-inline-block text-truncate" style="max-width: 280px;" title="<?= e($r['comment']) ?>">
+                                    <?= e($r['comment']) ?>
+                                </small>
+                            </td>
+                            <td>
+                                <?php if ($r['status'] === 'approved'): ?>
+                                    <span class="badge bg-success">Approved</span>
+                                <?php elseif ($r['status'] === 'pending'): ?>
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                <?php else: ?>
+                                    <span class="badge bg-danger">Rejected</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <small class="text-muted text-nowrap"><?= date('M d, Y', strtotime($r['created_at'])) ?></small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="<?= ADMIN_URL ?>/review-edit.php?id=<?= $r['id'] ?>" class="btn btn-outline-primary" title="Edit Review">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <?php if ($r['status'] !== 'approved'): ?>
+                                        <a href="<?= ADMIN_URL ?>/reviews.php?action=status&id=<?= $r['id'] ?>&val=approved&token=<?= csrf_token() ?>" class="btn btn-outline-success" title="Approve">
+                                            <i class="fa-solid fa-check"></i>
                                         </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                                    <?php endif; ?>
+                                    <?php if ($r['status'] !== 'rejected'): ?>
+                                        <a href="<?= ADMIN_URL ?>/reviews.php?action=status&id=<?= $r['id'] ?>&val=rejected&token=<?= csrf_token() ?>" class="btn btn-outline-warning" title="Reject">
+                                            <i class="fa-solid fa-ban"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                    <a href="<?= ADMIN_URL ?>/reviews.php?action=delete&id=<?= $r['id'] ?>&token=<?= csrf_token() ?>" class="btn btn-outline-danger" onclick="return confirmDelete('Delete this review permanently?');" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 

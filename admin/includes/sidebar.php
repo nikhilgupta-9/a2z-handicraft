@@ -34,7 +34,7 @@
 
         <li class="sidebar-header">Inquiries & Content</li>
         <li class="nav-item">
-            <a class="nav-link <?= ($currentPage === 'leads.php') ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/leads.php">
+            <a class="nav-link <?= in_array($currentPage, ['leads.php', 'lead-add.php']) ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/leads.php">
                 <span><i class="fa-solid fa-envelope-open-text"></i> Leads & Inquiries</span>
                 <?php if ($unreadLeadsCount > 0): ?>
                     <span class="badge bg-danger rounded-pill"><?= $unreadLeadsCount ?></span>
@@ -42,12 +42,12 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= ($currentPage === 'banners.php') ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/banners.php">
+            <a class="nav-link <?= in_array($currentPage, ['banners.php', 'banner-add.php', 'banner-edit.php']) ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/banners.php">
                 <span><i class="fa-solid fa-images"></i> Home Banners</span>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= ($currentPage === 'reviews.php') ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/reviews.php">
+            <a class="nav-link <?= in_array($currentPage, ['reviews.php', 'review-add.php', 'review-edit.php']) ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/reviews.php">
                 <span><i class="fa-solid fa-star-half-stroke"></i> Reviews</span>
                 <?php if ($pendingReviewsCount > 0): ?>
                     <span class="badge bg-warning text-dark rounded-pill"><?= $pendingReviewsCount ?></span>
@@ -55,7 +55,7 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= ($currentPage === 'testimonials.php') ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/testimonials.php">
+            <a class="nav-link <?= in_array($currentPage, ['testimonials.php', 'testimonial-add.php', 'testimonial-edit.php']) ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/testimonials.php">
                 <span><i class="fa-solid fa-quote-left"></i> Testimonials</span>
             </a>
         </li>
@@ -65,7 +65,7 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= ($currentPage === 'faqs.php') ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/faqs.php">
+            <a class="nav-link <?= in_array($currentPage, ['faqs.php', 'faq-add.php', 'faq-edit.php']) ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/faqs.php">
                 <span><i class="fa-solid fa-circle-question"></i> FAQs</span>
             </a>
         </li>
@@ -77,7 +77,7 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= ($currentPage === 'users.php') ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/users.php">
+            <a class="nav-link <?= in_array($currentPage, ['users.php', 'user-add.php', 'user-edit.php']) ? 'active' : '' ?>" href="<?= ADMIN_URL ?>/users.php">
                 <span><i class="fa-solid fa-users-gear"></i> Admin Users</span>
             </a>
         </li>

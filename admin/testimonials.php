@@ -3,15 +3,19 @@ $pageTitle = 'Testimonials Management';
 require_once __DIR__ . '/includes/header.php';
 
 global $pdo;
-$error = '';
 
 // Handle Delete
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     if (verify_csrf_token($_GET['token'] ?? '')) {
         $id = (int)$_GET['id'];
-        $stmt = $pdo->prepare("DELETE FROM testimonials WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT image FROM testimonials WHERE id = ?");
         $stmt->execute([$id]);
+        $img = $stmt->fetchColumn();
 
+        $delStmt = $pdo->prepare("DELETE FROM testimonials WHERE id = ?");
+        $delStmt->execute([$id]);
+
+        delete_uploaded_file($img);
         log_activity('TESTIMONIAL_DELETE', "Deleted testimonial ID: $id");
         set_flash('success', 'Testimonial deleted successfully.');
     } else {
@@ -21,211 +25,127 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     exit;
 }
 
-// Handle Add / Edit
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
-        $error = 'Security session expired. Please refresh and try again.';
-    } else {
-        $testId = !empty($_POST['test_id']) ? (int)$_POST['test_id'] : null;
-        $name = trim($_POST['name'] ?? '');
-        $designation = trim($_POST['designation'] ?? '');
-        $rating = (int)($_POST['rating'] ?? 5);
-        $content = trim($_POST['content'] ?? '');
-        $sortOrder = (int)($_POST['sort_order'] ?? 0);
-        $status = isset($_POST['status']) ? 1 : 0;
-
-        if (empty($name) || empty($content)) {
-            $error = 'Client name and testimonial content are required.';
-        } else {
-            $imagePath = $_POST['existing_image'] ?? 'images/icon-google.svg';
-            if (!empty($_POST['preset_image'])) {
-                $imagePath = $_POST['preset_image'];
-            }
-            if (!empty($_FILES['image_file']['name'])) {
-                $upload = upload_media($_FILES['image_file'], 'testimonials');
-                if ($upload['success']) {
-                    $imagePath = $upload['path'];
-                }
-            }
-
-            if ($testId) {
-                $stmt = $pdo->prepare("UPDATE testimonials SET name = ?, designation = ?, rating = ?, content = ?, image = ?, sort_order = ?, status = ? WHERE id = ?");
-                $stmt->execute([$name, $designation, $rating, $content, $imagePath, $sortOrder, $status, $testId]);
-                log_activity('TESTIMONIAL_UPDATE', "Updated testimonial ID: $testId");
-                set_flash('success', 'Testimonial updated successfully.');
-            } else {
-                $stmt = $pdo->prepare("INSERT INTO testimonials (name, designation, rating, content, image, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$name, $designation, $rating, $content, $imagePath, $sortOrder, $status]);
-                log_activity('TESTIMONIAL_CREATE', "Added testimonial from $name");
-                set_flash('success', 'New testimonial added successfully.');
-            }
-            header('Location: ' . ADMIN_URL . '/testimonials.php');
-            exit;
-        }
+// Handle Status Toggle
+if (isset($_GET['action']) && $_GET['action'] === 'toggle_status' && isset($_GET['id'])) {
+    if (verify_csrf_token($_GET['token'] ?? '')) {
+        $id = (int)$_GET['id'];
+        $pdo->query("UPDATE testimonials SET status = 1 - status WHERE id = $id");
+        set_flash('success', 'Testimonial status updated.');
     }
+    header('Location: ' . ADMIN_URL . '/testimonials.php');
+    exit;
 }
 
-$testimonials = $pdo->query("SELECT * FROM testimonials ORDER BY sort_order ASC, id ASC")->fetchAll();
-
-$editItem = null;
-if (isset($_GET['edit'])) {
-    $editId = (int)$_GET['edit'];
-    $stmt = $pdo->prepare("SELECT * FROM testimonials WHERE id = ?");
-    $stmt->execute([$editId]);
-    $editItem = $stmt->fetch();
+// Search Filter
+$search = trim($_GET['search'] ?? '');
+$sql = "SELECT * FROM testimonials WHERE 1=1";
+$params = [];
+if (!empty($search)) {
+    $sql .= " AND (name LIKE ? OR designation LIKE ? OR content LIKE ?)";
+    $term = "%$search%";
+    $params = [$term, $term, $term];
 }
+$sql .= " ORDER BY sort_order ASC, id ASC";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
+$testimonials = $stmt->fetchAll();
 ?>
 
-<?php if (!empty($error)): ?>
-    <div class="alert alert-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i><?= e($error) ?></div>
-<?php endif; ?>
-
-<div class="row">
-    <!-- Form Column -->
-    <div class="col-lg-5 mb-4">
-        <div class="card">
-            <div class="card-header bg-white">
-                <span><i class="fa-solid <?= $editItem ? 'fa-pen-to-square text-warning' : 'fa-plus text-primary' ?> me-2"></i><?= $editItem ? 'Edit Testimonial' : 'Add Testimonial' ?></span>
-                <?php if ($editItem): ?>
-                    <a href="<?= ADMIN_URL ?>/testimonials.php" class="btn btn-sm btn-outline-secondary">Cancel</a>
-                <?php endif; ?>
-            </div>
-            <div class="card-body">
-                <form action="" method="POST" enctype="multipart/form-data">
-                    <?= csrf_field() ?>
-                    <?php if ($editItem): ?>
-                        <input type="hidden" name="test_id" value="<?= $editItem['id'] ?>">
-                        <input type="hidden" name="existing_image" value="<?= e($editItem['image']) ?>">
+<!-- Header & Action Bar -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body py-3">
+        <div class="row align-items-center g-3">
+            <div class="col-md-6">
+                <form action="" method="GET" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search client name, company or text..." value="<?= e($search) ?>" style="max-width: 280px;">
+                    <button type="submit" class="btn btn-sm btn-primary-a2z"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    <?php if (!empty($search)): ?>
+                        <a href="<?= ADMIN_URL ?>/testimonials.php" class="btn btn-sm btn-light">Reset</a>
                     <?php endif; ?>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Client / Customer Name*</label>
-                        <input type="text" name="name" class="form-control" value="<?= e($editItem['name'] ?? '') ?>" required placeholder="e.g. Pooja Sharma">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Designation / Location</label>
-                        <input type="text" name="designation" class="form-control" value="<?= e($editItem['designation'] ?? '') ?>" placeholder="e.g. Wedding Planner, Delhi">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Rating (Stars)</label>
-                        <select name="rating" class="form-select">
-                            <option value="5" <?= (($editItem['rating'] ?? 5) == 5) ? 'selected' : '' ?>>⭐⭐⭐⭐⭐ (5 Stars)</option>
-                            <option value="4" <?= (($editItem['rating'] ?? 5) == 4) ? 'selected' : '' ?>>⭐⭐⭐⭐ (4 Stars)</option>
-                            <option value="3" <?= (($editItem['rating'] ?? 5) == 3) ? 'selected' : '' ?>>⭐⭐⭐ (3 Stars)</option>
-                            <option value="2" <?= (($editItem['rating'] ?? 5) == 2) ? 'selected' : '' ?>>⭐⭐ (2 Stars)</option>
-                            <option value="1" <?= (($editItem['rating'] ?? 5) == 1) ? 'selected' : '' ?>>⭐ (1 Star)</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Review / Testimonial Text*</label>
-                        <textarea name="content" class="form-control" rows="4" required placeholder="What did the client say about the handicrafts, quality, or delivery?"><?= e($editItem['content'] ?? '') ?></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Client Avatar / Source Icon</label>
-                        <div class="mb-2">
-                            <img src="<?= e(resolve_image_url($editItem['image'] ?? 'images/icon-google.svg')) ?>" id="testiImgPreview" class="border rounded p-1" style="max-height: 50px;">
-                        </div>
-                        <input type="file" name="image_file" class="form-control form-control-sm mb-2" data-preview-target="testiImgPreview" accept="image/*">
-                        <select name="preset_image" class="form-select form-select-sm">
-                            <option value="">-- Choose Existing Icon --</option>
-                            <option value="images/icon-google.svg" <?= (($editItem['image'] ?? '') === 'images/icon-google.svg') ? 'selected' : '' ?>>Google Review Icon</option>
-                            <option value="images/dummy.png" <?= (($editItem['image'] ?? '') === 'images/dummy.png') ? 'selected' : '' ?>>Default Avatar</option>
-                        </select>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Sort Order</label>
-                            <input type="number" name="sort_order" class="form-control" value="<?= e($editItem['sort_order'] ?? 1) ?>" min="0">
-                        </div>
-                        <div class="col-6 mb-3 pt-4">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="status" id="testiStatus" <?= (!isset($editItem) || $editItem['status'] == 1) ? 'checked' : '' ?>>
-                                <label class="form-check-label fw-semibold" for="testiStatus">Active</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary-a2z w-100 py-2">
-                        <i class="fa-solid fa-floppy-disk me-1"></i> <?= $editItem ? 'Update Testimonial' : 'Save Testimonial' ?>
-                    </button>
                 </form>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="<?= ADMIN_URL ?>/testimonial-add.php" class="btn btn-primary-a2z btn-sm shadow-sm">
+                    <i class="fa-solid fa-plus-circle me-1"></i> Add New Testimonial
+                </a>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Table Column -->
-    <div class="col-lg-7 mb-4">
-        <div class="card">
-            <div class="card-header bg-white">
-                <span><i class="fa-solid fa-quote-left text-primary me-2"></i>Client Testimonials (<?= count($testimonials) ?>)</span>
-            </div>
-            <div class="card-body p-0 table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
+<!-- Testimonials Listing Table -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between">
+        <span class="fw-bold"><i class="fa-solid fa-quote-left text-primary me-2"></i>Customer & Decorator Testimonials (<?= count($testimonials) ?>)</span>
+        <span class="text-muted small">Displayed on homepage and reviews section</span>
+    </div>
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 70px;">Client</th>
+                    <th>Name & Designation</th>
+                    <th>Rating</th>
+                    <th>Testimonial Quote</th>
+                    <th>Order</th>
+                    <th>Status</th>
+                    <th style="width: 140px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($testimonials)): ?>
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-quote-left fs-2 mb-2 d-block"></i>
+                            No testimonials found. Click "Add New Testimonial" above to add one.
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($testimonials as $t): ?>
                         <tr>
-                            <th>Client</th>
-                            <th>Rating</th>
-                            <th>Feedback</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <td>
+                                <img src="<?= e(resolve_image_url($t['image'])) ?>" class="rounded-circle border" style="width: 45px; height: 45px; object-fit: cover;" alt="<?= e($t['name']) ?>">
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark fs-6"><?= e($t['name']) ?></div>
+                                <div class="small text-muted"><?= e($t['designation'] ?? 'Customer') ?></div>
+                            </td>
+                            <td>
+                                <div class="text-warning small">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <i class="fa-<?= ($i <= $t['rating']) ? 'solid' : 'regular' ?> fa-star"></i>
+                                    <?php endfor; ?>
+                                </div>
+                            </td>
+                            <td>
+                                <small class="text-muted d-inline-block text-truncate" style="max-width: 320px;" title="<?= e($t['content']) ?>">
+                                    "<?= e($t['content']) ?>"
+                                </small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border"><?= $t['sort_order'] ?></span>
+                            </td>
+                            <td>
+                                <a href="<?= ADMIN_URL ?>/testimonials.php?action=toggle_status&id=<?= $t['id'] ?>&token=<?= csrf_token() ?>" class="badge text-decoration-none <?= ($t['status'] == 1) ? 'bg-success' : 'bg-secondary' ?>" title="Click to toggle status">
+                                    <?= ($t['status'] == 1) ? 'Active' : 'Hidden' ?>
+                                </a>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="<?= ADMIN_URL ?>/testimonial-edit.php?id=<?= $t['id'] ?>" class="btn btn-outline-primary" title="Edit Testimonial">
+                                        <i class="fa-solid fa-pen"></i> Edit
+                                    </a>
+                                    <a href="<?= ADMIN_URL ?>/testimonials.php?action=delete&id=<?= $t['id'] ?>&token=<?= csrf_token() ?>" class="btn btn-outline-danger" onclick="return confirmDelete('Are you sure you want to delete this testimonial?');" title="Delete Testimonial">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($testimonials)): ?>
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">No testimonials found.</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($testimonials as $t): ?>
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <img src="<?= e(resolve_image_url($t['image'])) ?>" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;">
-                                            <div>
-                                                <div class="fw-bold"><?= e($t['name']) ?></div>
-                                                <small class="text-muted"><?= e($t['designation']) ?></small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="text-warning">
-                                            <?= str_repeat('★', $t['rating']) ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <small class="text-truncate d-inline-block" style="max-width: 250px;">
-                                            <?= e($t['content']) ?>
-                                        </small>
-                                    </td>
-                                    <td>
-                                        <?php if ($t['status'] == 1): ?>
-                                            <span class="badge bg-success">Active</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-secondary">Hidden</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="<?= ADMIN_URL ?>/testimonials.php?edit=<?= $t['id'] ?>" class="btn btn-light" title="Edit">
-                                                <i class="fa-solid fa-pen text-primary"></i>
-                                            </a>
-                                            <a href="<?= ADMIN_URL ?>/testimonials.php?action=delete&id=<?= $t['id'] ?>&token=<?= csrf_token() ?>" class="btn btn-light" onclick="return confirmDelete('Delete this testimonial?');" title="Delete">
-                                                <i class="fa-solid fa-trash text-danger"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 
