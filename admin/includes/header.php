@@ -1,4 +1,7 @@
 <?php
+// Buffer page output so action handlers that run after this include can still redirect
+ob_start();
+
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_admin_auth();
 

@@ -5,37 +5,12 @@ $successMessage = '';
 $errorMessage = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
-        $errorMessage = 'Security session expired. Please refresh and try again.';
+    $result = process_contact_submission($_POST);
+    if ($result['success']) {
+        $successMessage = $result['message'];
+        $_POST = [];
     } else {
-        $fname = clean_input($_POST['fname'] ?? '');
-        $email = clean_input($_POST['email'] ?? '');
-        $phone = clean_input($_POST['phone'] ?? '');
-        $subject = clean_input($_POST['subject'] ?? 'Website Inquiry');
-        $message = clean_input($_POST['message'] ?? '');
-
-        if (empty($fname) || empty($email) || empty($phone) || empty($message)) {
-            $errorMessage = 'Please complete all required fields.';
-        } else {
-            $leadData = [
-                'name' => $fname,
-                'email' => $email,
-                'phone' => $phone,
-                'subject' => $subject,
-                'message' => $message
-            ];
-
-            // Store in DB
-            $inserted = create_lead($leadData);
-
-            if ($inserted) {
-                // Dispatch email via PHPMailer
-                send_lead_notification($leadData);
-                $successMessage = 'Thank you! Your message has been sent successfully. Our team will contact you shortly.';
-            } else {
-                $errorMessage = 'Failed to submit inquiry. Please try again or reach us via WhatsApp directly.';
-            }
-        }
+        $errorMessage = $result['message'];
     }
 }
 
@@ -154,7 +129,7 @@ $mapIframeUrl = get_setting('google_map_iframe', 'https://www.google.com/maps/em
             </div>
 
             <div class="row">
-                <div class="col-xl-6 mb-4">
+                <div class="col-xl-6 mb-4 order-2 order-xl-1">
                     <!-- Google Map Start -->
                     <div class="google-map-iframe wow fadeInUp shadow rounded overflow-hidden">
                         <iframe src="<?= e($mapIframeUrl) ?>" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
@@ -162,9 +137,9 @@ $mapIframeUrl = get_setting('google_map_iframe', 'https://www.google.com/maps/em
                     <!-- Google Map End -->
                 </div>
                 
-                <div class="col-xl-6 mb-4">
+                <div class="col-xl-6 mb-4 order-1 order-xl-2">
                     <!-- Contact Form Start -->
-                    <div class="contact-form bg-white p-4 p-md-5 rounded shadow-sm">
+                    <div class="contact-form bg-white p-3 p-sm-4 p-md-5 rounded shadow-sm">
                         <?php if (!empty($successMessage)): ?>
                             <div class="alert alert-success d-flex align-items-center" role="alert">
                                 <i class="fa-solid fa-circle-check fs-4 me-2"></i>
@@ -183,33 +158,34 @@ $mapIframeUrl = get_setting('google_map_iframe', 'https://www.google.com/maps/em
                             <?= csrf_field() ?>
                             <div class="row">
                                 <div class="form-group col-md-6 mb-4">
-                                    <label class="form-label fw-semibold">Full Name*</label>
-                                    <input type="text" name="fname" class="form-control" id="fname" required placeholder="Your full name" value="<?= e($_POST['fname'] ?? '') ?>">
+                                    <label for="fname" class="form-label fw-semibold">Full Name*</label>
+                                    <input type="text" name="fname" class="form-control" id="fname" autocomplete="name" required placeholder="Your full name" value="<?= e($_POST['fname'] ?? '') ?>">
                                 </div>
 
                                 <div class="form-group col-md-6 mb-4">
-                                    <label class="form-label fw-semibold">Email Address*</label>
-                                    <input type="email" name="email" class="form-control" id="email" required placeholder="your.email@example.com" value="<?= e($_POST['email'] ?? '') ?>">
+                                    <label for="email" class="form-label fw-semibold">Email Address*</label>
+                                    <input type="email" name="email" class="form-control" id="email" autocomplete="email" inputmode="email" required placeholder="your.email@example.com" value="<?= e($_POST['email'] ?? '') ?>">
                                 </div>
 
                                 <div class="form-group col-md-6 mb-4">
-                                    <label class="form-label fw-semibold">Phone Number*</label>
-                                    <input type="text" name="phone" class="form-control" id="phone" required placeholder="+91 9876543210" value="<?= e($_POST['phone'] ?? '') ?>">
+                                    <label for="phone" class="form-label fw-semibold">Phone Number*</label>
+                                    <input type="tel" name="phone" class="form-control" id="phone" autocomplete="tel" inputmode="tel" required placeholder="+91 9876543210" value="<?= e($_POST['phone'] ?? '') ?>">
                                 </div>
 
                                 <div class="form-group col-md-6 mb-4">
-                                    <label class="form-label fw-semibold">Subject*</label>
+                                    <label for="subject" class="form-label fw-semibold">Subject*</label>
                                     <input type="text" name="subject" class="form-control" id="subject" required placeholder="e.g. Bulk Order Inquiry" value="<?= e($_POST['subject'] ?? '') ?>">
                                 </div>
 
                                 <div class="form-group col-md-12 mb-4">
-                                    <label class="form-label fw-semibold">Message*</label>
+                                    <label for="message" class="form-label fw-semibold">Message*</label>
                                     <textarea name="message" class="form-control" id="message" rows="5" required placeholder="Enter details about required quantities, designs, or target delivery date..."><?= e($_POST['message'] ?? '') ?></textarea>
                                 </div>
 
                                 <div class="col-md-12">
                                     <div class="contact-form-btn">
                                         <button type="submit" class="btn-default w-100 py-3">Send Message</button>
+                                        <div id="msgSubmit" class="h4 hidden" style="margin-top: 15px;"></div>
                                     </div>
                                 </div>
                             </div>

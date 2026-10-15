@@ -1,16 +1,23 @@
 # A2Z Handicraft Apache Configuration & Clean SEO URLs
+
+# Security: protect sensitive files even if mod_rewrite is unavailable
+<FilesMatch "(^\.|\.(sql|lock|log|bak|md)$|^composer\.json$)">
+    Require all denied
+</FilesMatch>
+
+# Disable Directory Browsing
+Options -Indexes
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /a2z-handicraft/
 
-    # Security: Protect sensitive files and directories
-    <FilesMatch "^\.env|\.git|composer\.(json|lock)|.*\.sql$">
-        Order allow,deny
-        Deny from all
-    </FilesMatch>
+    # Security: block dotfiles/dirs (.git, .env, .DS_Store) except .well-known
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
 
-    # Disable Directory Browsing
-    Options -Indexes
+    # Security: block server-side only directories and include stubs
+    RewriteRule ^(vendor|config|util|includes|admin/includes)(/|$) - [F,L]
+    RewriteRule ^(header|footer|headcss)\.php$ - [F,L]
 
     # Allow direct access to real files and directories
     RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -36,6 +43,8 @@
 
 # Basic Security Headers
 <IfModule mod_headers.c>
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"

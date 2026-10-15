@@ -48,8 +48,9 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['toggle_stock', 'toggle
 }
 
 // Filter variables
-$search = trim($_GET['search'] ?? '');
+$search = request_string($_GET, 'search');
 $categoryId = !empty($_GET['category_id']) ? (int)$_GET['category_id'] : null;
+$subcategoryId = !empty($_GET['subcategory_id']) ? (int)$_GET['subcategory_id'] : null;
 
 $query = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1";
 $params = [];
@@ -63,6 +64,11 @@ if (!empty($search)) {
 if (!empty($categoryId)) {
     $query .= " AND p.category_id = ?";
     $params[] = $categoryId;
+}
+
+if (!empty($subcategoryId)) {
+    $query .= " AND p.subcategory_id = ?";
+    $params[] = $subcategoryId;
 }
 
 $query .= " ORDER BY p.id DESC";
@@ -88,7 +94,10 @@ $categories = $pdo->query("SELECT id, name FROM categories ORDER BY name ASC")->
                         <?php endforeach; ?>
                     </select>
                     <button type="submit" class="btn btn-sm btn-primary-a2z"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    <?php if (!empty($search) || !empty($categoryId)): ?>
+                    <?php if (!empty($subcategoryId)): ?>
+                        <input type="hidden" name="subcategory_id" value="<?= $subcategoryId ?>">
+                    <?php endif; ?>
+                    <?php if (!empty($search) || !empty($categoryId) || !empty($subcategoryId)): ?>
                         <a href="<?= ADMIN_URL ?>/products.php" class="btn btn-sm btn-light">Reset</a>
                     <?php endif; ?>
                 </form>

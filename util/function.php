@@ -34,6 +34,15 @@ function clean_input($data) {
 }
 
 /**
+ * Read a scalar request value as a trimmed string.
+ * Arrays (e.g. ?category[]=x) fall back to the default instead of throwing a TypeError.
+ */
+function request_string($source, $key, $default = '') {
+    $value = $source[$key] ?? $default;
+    return is_scalar($value) ? trim((string)$value) : $default;
+}
+
+/**
  * Generate or get CSRF token
  */
 function csrf_token() {
@@ -54,7 +63,7 @@ function csrf_field() {
  * Verify CSRF token
  */
 function verify_csrf_token($token) {
-    if (empty($_SESSION['csrf_token']) || empty($token)) {
+    if (empty($_SESSION['csrf_token']) || empty($token) || !is_string($token)) {
         return false;
     }
     return hash_equals($_SESSION['csrf_token'], $token);
@@ -352,7 +361,7 @@ function delete_uploaded_file($path) {
 /**
  * Send email using PHPMailer or PHP mail()
  */
-function send_app_mail($toEmail, $toName, $subject, $htmlBody, $plainBody = '') {
+function send_app_mail($toEmail, $toName, $subject, $htmlBody, $plainBody = '', $replyToEmail = '', $replyToName = '') {
     if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
         $mail = new PHPMailer(true);
         try {
@@ -378,7 +387,11 @@ function send_app_mail($toEmail, $toName, $subject, $htmlBody, $plainBody = '') 
 
             $mail->setFrom($fromAddress, $fromName);
             $mail->addAddress($toEmail, $toName);
-            $mail->addReplyTo($fromAddress, $fromName);
+            if (!empty($replyToEmail) && filter_var($replyToEmail, FILTER_VALIDATE_EMAIL)) {
+                $mail->addReplyTo($replyToEmail, $replyToName);
+            } else {
+                $mail->addReplyTo($fromAddress, $fromName);
+            }
 
             $mail->isHTML(true);
             $mail->CharSet = 'UTF-8';
@@ -418,7 +431,45 @@ function send_lead_notification($leadData) {
     $html .= "<blockquote>" . nl2br(e($leadData['message'])) . "</blockquote>";
     $html .= "<p><small>Received at: " . date('Y-m-d H:i:s') . "</small></p>";
 
-    return send_app_mail($adminEmail, 'A2Z Admin', $subject, $html);
+    // Reply-To is the visitor so the admin can answer the lead directly from the inbox
+    return send_app_mail($adminEmail, 'A2Z Admin', $subject, $html, '', $leadData['email'] ?? '', $leadData['name'] ?? '');
+}
+
+/**
+ * Validate, store and email a contact form submission.
+ * Shared by contact-us.php (no-JS post) and form-process.php (AJAX).
+ */
+function process_contact_submission($post) {
+    if (!verify_csrf_token($post['csrf_token'] ?? '')) {
+        return ['success' => false, 'message' => 'Security session expired. Please refresh and try again.'];
+    }
+
+    $leadData = [
+        'name' => clean_input(request_string($post, 'fname')),
+        'email' => clean_input(request_string($post, 'email')),
+        'phone' => clean_input(request_string($post, 'phone')),
+        'subject' => clean_input(request_string($post, 'subject')) ?: 'Website Inquiry',
+        'message' => clean_input(request_string($post, 'message'))
+    ];
+
+    if (empty($leadData['name']) || empty($leadData['email']) || empty($leadData['phone']) || empty($leadData['message'])) {
+        return ['success' => false, 'message' => 'Please complete all required fields.'];
+    }
+    if (!filter_var($leadData['email'], FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'message' => 'Please enter a valid email address.'];
+    }
+
+    if (!create_lead($leadData)) {
+        return ['success' => false, 'message' => 'Failed to submit inquiry. Please try again or reach us via WhatsApp directly.'];
+    }
+
+    // Lead is already saved in the admin panel, so a mail failure is only logged
+    $mailResult = send_lead_notification($leadData);
+    if (empty($mailResult['success'])) {
+        error_log('Lead notification email failed: ' . ($mailResult['error'] ?? 'unknown error'));
+    }
+
+    return ['success' => true, 'message' => 'Thank you! Your message has been sent successfully. Our team will contact you shortly.'];
 }
 
 /* =========================================================================
@@ -718,6 +769,7 @@ function render_seo_meta($custom = []) {
     $output = [];
     $output[] = '<title>' . e($title) . '</title>';
     $output[] = '<meta name="description" content="' . e($description) . '">';
+    $output[] = '<meta name="author" content="nikhilworks.com">';
     if (!empty($keywords)) {
         $output[] = '<meta name="keywords" content="' . e($keywords) . '">';
     }

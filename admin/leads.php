@@ -7,7 +7,11 @@ global $pdo;
 // Handle CSV Export
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     $leadsExport = $pdo->query("SELECT id, name, email, phone, subject, message, status, is_read, ip_address, created_at FROM leads ORDER BY id DESC")->fetchAll();
-    
+
+    // Drop the buffered admin layout so only CSV rows are sent
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename=a2z_leads_' . date('Y-m-d_His') . '.csv');
     

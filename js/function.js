@@ -338,6 +338,10 @@
 
 	function submitForm(){
 		/* Ajax call to submit form */
+		var $submitBtn = $contactform.find('button[type="submit"]');
+		var btnText = $submitBtn.text();
+		$submitBtn.prop('disabled', true).text('Sending...');
+
 		$.ajax({
 			type: "POST",
 			url: "form-process.php",
@@ -348,6 +352,12 @@
 				} else {
 					submitMSG(false,text);
 				}
+			},
+			error : function(){
+				submitMSG(false, "Something went wrong. Please try again or contact us on WhatsApp.");
+			},
+			complete : function(){
+				$submitBtn.prop('disabled', false).text(btnText);
 			}
 		});
 	}

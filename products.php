@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/config/config.php';
 
-$categorySlug = trim($_GET['category'] ?? '');
-$subcategorySlug = trim($_GET['subcategory'] ?? '');
-$search = trim($_GET['search'] ?? '');
+$categorySlug = request_string($_GET, 'category');
+$subcategorySlug = request_string($_GET, 'subcategory');
+$search = request_string($_GET, 'search');
 
 $currentCategory = null;
 $currentSubcategory = null;

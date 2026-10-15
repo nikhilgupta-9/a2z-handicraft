@@ -36,7 +36,7 @@ $cleanWhatsapp = preg_replace('/[^0-9]/', '', $footerWhatsapp);
                     <div class="footer-links pe-lg-3">
                         <div class="footer-logo mb-3">
                             <a href="<?= BASE_URL ?>/">
-                                <img src="<?= e($footerLogo) ?>" alt="<?= e($siteName) ?>" style="max-height: 48px; background: #fff; padding: 4px 8px; border-radius: 6px;">
+                                <img src="<?= e($footerLogo) ?>" alt="<?= e($siteName) ?>" class="footer-logo-img">
                             </a>
                         </div>
                         <div class="about-footer-content mt-2">

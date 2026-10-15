@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+$email = filter_var(request_string($_POST, 'email'), FILTER_VALIDATE_EMAIL);
 
 if (!$email) {
     http_response_code(400);

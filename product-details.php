@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/config/config.php';
 
-$slug = trim($_GET['slug'] ?? '');
+$slug = request_string($_GET, 'slug');
 $id = (int)($_GET['id'] ?? 0);
 
 if (!empty($slug)) {
