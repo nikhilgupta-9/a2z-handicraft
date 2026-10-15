@@ -93,3 +93,27 @@
         </li>
     </ul>
 </aside>
+<script>
+/**
+ * Instant sidebar scroll restoration to prevent sidebar jumping to top on page navigation
+ */
+(function() {
+    try {
+        var sb = document.getElementById('adminSidebar');
+        if (!sb) return;
+        var saved = sessionStorage.getItem('admin_sidebar_scroll');
+        if (saved !== null) {
+            sb.scrollTop = parseInt(saved, 10);
+        } else {
+            var active = sb.querySelector('.nav-link.active');
+            if (active) {
+                var sbH = sb.clientHeight;
+                var aTop = active.offsetTop;
+                if (aTop > sbH - 120) {
+                    sb.scrollTop = Math.max(0, aTop - Math.floor(sbH / 2));
+                }
+            }
+        }
+    } catch(e) {}
+})();
+</script>

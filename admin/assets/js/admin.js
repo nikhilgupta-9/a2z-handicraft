@@ -20,6 +20,42 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // 1b. Sidebar Scroll Position Persistence across Page Navigations
+    if (sidebar) {
+        let scrollDebounceTimer;
+        // Save scroll position during scroll
+        sidebar.addEventListener('scroll', function () {
+            clearTimeout(scrollDebounceTimer);
+            scrollDebounceTimer = setTimeout(function () {
+                sessionStorage.setItem('admin_sidebar_scroll', sidebar.scrollTop);
+            }, 50);
+        }, { passive: true });
+
+        // Save immediately before navigating away on clicking any link inside sidebar
+        sidebar.querySelectorAll('a').forEach(function (link) {
+            link.addEventListener('click', function () {
+                sessionStorage.setItem('admin_sidebar_scroll', sidebar.scrollTop);
+            });
+        });
+
+        // Save on window beforeunload
+        window.addEventListener('beforeunload', function () {
+            sessionStorage.setItem('admin_sidebar_scroll', sidebar.scrollTop);
+        });
+
+        // Ensure active menu item is visible if currently out of the sidebar viewport
+        const activeLink = sidebar.querySelector('.nav-link.active');
+        if (activeLink) {
+            const sbRect = sidebar.getBoundingClientRect();
+            const linkRect = activeLink.getBoundingClientRect();
+            const isOutOfView = (linkRect.top < sbRect.top + 30) || (linkRect.bottom > sbRect.bottom - 20);
+            if (isOutOfView) {
+                activeLink.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+                sessionStorage.setItem('admin_sidebar_scroll', sidebar.scrollTop);
+            }
+        }
+    }
+
     // 2. Auto-generate Slug from Name
     const nameInput = document.querySelector('input[data-slug-source]');
     const slugInput = document.querySelector('input[data-slug-target]');
