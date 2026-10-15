@@ -44,9 +44,9 @@
 	/* Product Slider JS */
 	if ($('.product-slider').length) {
 		const testimonial_slider = new Swiper('.product-slider .swiper', {
-			slidesPerView : 1,
+			slidesPerView : 2,
 			speed: 1500,
-			spaceBetween: 10,
+			spaceBetween: 12,
 			loop: true,
 			autoplay: {
 				delay: 5000,
@@ -58,9 +58,11 @@
 			breakpoints: {
 				768:{
 					slidesPerView: 2,
+					spaceBetween: 20,
 				},
 				991:{
 					slidesPerView: 3,
+					spaceBetween: 20,
 				},
 				1366:{
 					slidesPerView: 4,

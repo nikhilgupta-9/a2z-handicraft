@@ -135,7 +135,7 @@ $seoMeta = [
                                         <?php foreach ($gallery as $img): ?>
                                             <div class="swiper-slide">
                                                 <figure class="imgae-anime">
-                                                    <img src="<?= e(resolve_image_url($img)) ?>" alt="<?= e($product['name']) ?>" style="cursor: pointer; height: 75px; object-fit: cover;">
+                                                    <img src="<?= e(resolve_image_url($img)) ?>" alt="<?= e($product['name']) ?>" style="cursor: pointer; object-fit: cover;">
                                                 </figure>
                                             </div>
                                         <?php endforeach; ?>
@@ -312,7 +312,7 @@ $seoMeta = [
 
     <!-- Related Products Section Start -->
     <?php if (!empty($relatedProducts)): ?>
-    <div class="our-products py-5 bg-light">
+    <div class="our-products related-products py-5 bg-light">
         <div class="container">
             <div class="row section-row">
                  <div class="col-xl-12">
@@ -325,38 +325,26 @@ $seoMeta = [
 
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="product-slider">
+                    <div class="related-product-slider">
                         <div class="swiper">
                             <div class="swiper-wrapper">
                                 <?php foreach ($relatedProducts as $rel): ?>
                                     <div class="swiper-slide">
-                                        <div class="product-item">
-                                            <div class="product-item-header">
-                                                <div class="product-item-image">
-                                                    <a href="<?= BASE_URL ?>/product/<?= e($rel['slug']) ?>">
-                                                        <figure>
-                                                            <img src="<?= e(resolve_image_url($rel['featured_image'])) ?>" alt="<?= e($rel['name']) ?>">
-                                                        </figure>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                            <div class="product-item-body">
-                                                <div class="product-item-content">
-                                                    <h2 class="product-item-title"><a href="<?= BASE_URL ?>/product/<?= e($rel['slug']) ?>"><?= e($rel['name']) ?></a></h2>
-                                                    <div class="product-item-price mt-1">
-                                                        <h3><?= format_price($rel['price']) ?></h3>
-                                                    </div>
-                                                </div>                     
+                                        <div class="related-card">
+                                            <a href="<?= BASE_URL ?>/product/<?= e($rel['slug']) ?>" class="related-card-image">
+                                                <img src="<?= e(resolve_image_url($rel['featured_image'])) ?>" alt="<?= e($rel['name']) ?>" loading="lazy">
+                                            </a>
+                                            <div class="related-card-body">
+                                                <h3 class="related-card-title"><a href="<?= BASE_URL ?>/product/<?= e($rel['slug']) ?>"><?= e($rel['name']) ?></a></h3>
+                                                <div class="related-card-price"><?= format_price($rel['price']) ?></div>
                                             </div>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
-                            <div class="product-slider-btn">
-                                <div class="product-slider-button-prev"></div>
-                                <div class="product-slider-button-next"></div>
-                            </div>
                         </div>
+                        <div class="related-slider-button-prev" aria-label="Previous"></div>
+                        <div class="related-slider-button-next" aria-label="Next"></div>
                     </div>
                 </div>
             </div>
@@ -366,5 +354,24 @@ $seoMeta = [
     <!-- Related Products Section End -->
 
 <?php include('includes/footer.php') ?>
+<?php if (!empty($relatedProducts)): ?>
+<script>
+    new Swiper('.related-product-slider .swiper', {
+        slidesPerView: 2,
+        spaceBetween: 12,
+        speed: 800,
+        loop: <?= count($relatedProducts) > 4 ? 'true' : 'false' ?>,
+        autoplay: { delay: 5000, disableOnInteraction: false },
+        navigation: {
+            nextEl: '.related-slider-button-next',
+            prevEl: '.related-slider-button-prev',
+        },
+        breakpoints: {
+            768: { slidesPerView: 3, spaceBetween: 20 },
+            1200: { slidesPerView: 4, spaceBetween: 24 }
+        }
+    });
+</script>
+<?php endif; ?>
 </body>
 </html>

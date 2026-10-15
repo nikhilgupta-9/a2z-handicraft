@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'site_name', 'site_tagline', 'phone', 'whatsapp', 'email', 'address',
             'topbar_info', 'topbar_whatsapp_text', 'facebook_url', 'instagram_url',
             'youtube_url', 'copyright_text', 'google_map_iframe',
+            'footer_about_text', 'footer_newsletter_title', 'footer_newsletter_subtitle', 'workshop_timings',
             'meta_title', 'meta_description', 'meta_keywords'
         ];
 
@@ -174,8 +175,30 @@ $settings = get_all_settings();
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label fw-semibold">Footer About / Brand Description</label>
+                        <textarea name="footer_about_text" class="form-control" rows="3" placeholder="Brief description of the brand shown in the footer column..."><?= e($settings['footer_about_text'] ?? 'A2Z Handicraft is a premier manufacturer and exporter of authentic Indian handcrafted decor, wedding props, torans, dream catchers, and festival gifts.') ?></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Footer Newsletter Title</label>
+                            <input type="text" name="footer_newsletter_title" class="form-control" value="<?= e($settings['footer_newsletter_title'] ?? 'Stay In Touch') ?>">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Newsletter Subtitle</label>
+                            <input type="text" name="footer_newsletter_subtitle" class="form-control" value="<?= e($settings['footer_newsletter_subtitle'] ?? 'Subscribe for latest arrivals & bulk festival discounts.') ?>">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Workshop / Business Hours</label>
+                        <input type="text" name="workshop_timings" class="form-control" value="<?= e($settings['workshop_timings'] ?? 'Mon - Sat: 9:00 AM - 8:00 PM (Sunday Closed)') ?>">
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label fw-semibold">Footer Copyright Text</label>
-                        <input type="text" name="copyright_text" class="form-control" value="<?= e($settings['copyright_text'] ?? 'Copyright © 2026 A2Z HANDICRAFT. All Rights Reserved!') ?>">
+                        <input type="text" name="copyright_text" class="form-control" value="<?= e($settings['copyright_text'] ?? 'Copyright © {year} A2Z HANDICRAFT. All Rights Reserved!') ?>">
+                        <small class="text-muted">Use <code>{year}</code> for automatic current year</small>
                     </div>
 
                     <hr>
